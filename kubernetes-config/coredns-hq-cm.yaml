@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+data:
+  Corefile: |-
+    overseas.svc.cluster.local:5353 { 
+      forward . 172.16.0.15 
+    }
+    .:5353 { 
+      forward . 10.0.0.37
+    }

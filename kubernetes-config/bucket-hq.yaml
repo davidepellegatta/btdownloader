@@ -1,0 +1,12 @@
+apiVersion: couchbase.com/v2
+kind: CouchbaseBucket
+metadata:
+  name: hq-bucket
+  labels:
+    cluster: cb-acme-headquarter
+spec:
+  memoryQuota: 100Mi
+  replicas: 1
+  enableFlush: true
+  enableIndexReplica: true
+  compressionMode: passive

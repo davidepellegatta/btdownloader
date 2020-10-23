@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cb-hq-auth
+type: Opaque
+data:
+  username: QWRtaW5pc3RyYXRvcg== # Administrator
+  password: cGFzc3dvcmQ=         # password
+---
+apiVersion: couchbase.com/v2
+kind: CouchbaseBucket
+metadata:
+  name: default
+---
+apiVersion: couchbase.com/v2
+kind: CouchbaseCluster
+metadata:
+  name: cb-acme-headquarter
+  namespace: headquarter
+spec:
+  image: couchbase/server:6.6.0
+  security:
+    adminSecret: cb-hq-auth
+  buckets:
+    managed: true
+  networking:
+    exposeAdminConsole: true
+    adminConsoleServices:
+    - data
+    adminConsoleServiceType: NodePort
+    exposedFeatures:
+    - xdcr
+    - client
+  platform: aws
+  xdcr:
+    managed: true
+    remoteClusters:
+    - name: acme-overseas
+      uuid: 96fcd0faa1434cd3c31cfbe99a53e584 
+      hostname: cb-acme-overseas.overseas 
+      authenticationSecret: cb-xdcr-secret
+      replications: 
+        selector:
+          matchLabels:
+             replication: replicate-to-overseas
+  servers:
+  - size: 3
+    name: all_services
+    services:
+    - data
+    - index
+    - query
+    - eventing
+    pod:
+      spec:
+        dnsPolicy: None
+        dnsConfig:
+          nameservers:
+            - "172.20.123.9"
+          searches:
+            - headquarter.svc.cluster.local
+            - svc.cluster.local
+            - cluster.local
+---
+apiVersion: couchbase.com/v2
+kind: CouchbaseBucket
+metadata:
+  name: hq-bucket
+  labels:
+    cluster: cb-acme-headquarter
+spec:
+  memoryQuota: 100Mi
+  replicas: 1
+  enableFlush: true
+  enableIndexReplica: true
+  compressionMode: passive
+---
+apiVersion: couchbase.com/v2
+kind: CouchbaseReplication
+metadata:
+  name: replicate-to-overseas
+  labels:
+    replication: replicate-to-overseas 
+spec:
+  bucket: hq-bucket
+  remoteBucket: overseas-bucket

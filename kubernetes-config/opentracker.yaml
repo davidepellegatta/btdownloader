@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentracker
+  labels:
+    app: opentracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opentracker
+  template:
+    metadata:
+      labels:
+        app: opentracker
+    spec:
+      containers:
+      - image: lednerb/opentracker-docker
+        ports:
+          - name: tracker-tcp
+            containerPort: 6969
+            protocol: TCP
+          - name: tracker-udp
+            containerPort: 6969
+            protocol: UDP
+        imagePullPolicy: IfNotPresent
+        name: opentracker
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentracker-svc
+spec:
+  type: NodePort
+  selector:
+    app: opentracker
+  ports:
+  - name: tracker-tcp
+    port: 6969
+    targetPort: 6969
+    protocol: TCP
+  - name: tracker-udp
+    port: 6969
+    targetPort: 6969
+    protocol: UDP

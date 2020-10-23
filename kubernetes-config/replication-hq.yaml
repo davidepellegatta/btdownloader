@@ -1,0 +1,9 @@
+apiVersion: couchbase.com/v2
+kind: CouchbaseReplication
+metadata:
+  name: replicate-cb-acme-headquarter-to-cb-acme-overseas-remote-cluster
+  labels:
+    replication: replicate-cb-acme-headquarter-to-cb-acme-overseas 
+spec:
+  bucket: cb-acme-headquarter
+  remoteBucket: cb-acme-overseas

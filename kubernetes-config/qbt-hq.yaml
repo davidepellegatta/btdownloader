@@ -1,0 +1,99 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: torrent-app-hq
+  namespace: headquarter
+spec:
+  dnsPolicy: None
+  dnsConfig:
+    nameservers:
+      - "172.20.123.9"
+    searches:
+      - headquarter.svc.cluster.local
+      - svc.cluster.local
+      - cluster.local
+  containers:
+    - name: application
+      image: gialloyellow/bt-downloader
+      env:
+        - name: COUCHBASE_HOST
+          value: "cb-acme-headquarter-srv.headquarter.svc.cluster.local"
+        - name: COUCHBASE_BUCKET_EXCHANGE
+          value: "hq-bucket"
+        - name: COUCHBASE_USERNAME
+          value: "Administrator"
+        - name: COUCHBASE_PASSWORD
+          value: "password"
+        - name: TORRENT_ANNOUNCEURL
+          value: "http://10.0.0.53:6969/announce"
+        - name: TORRENT_DOWNLOADPATH
+          value: "/downloads/"
+        - name: TORRENT_CLIENTHOST
+          value: "http://localhost:8080"
+      ports:
+        - name: app-ui
+          containerPort: 8086
+          protocol: TCP
+      imagePullPolicy: Always
+      volumeMounts:
+      - mountPath: "/downloads"
+        name: downloads-path-qbt
+    - name: qbittorrent-hq
+      image: linuxserver/qbittorrent
+      env:
+      - name: PUID
+        value: "1000"
+      - name: PGID
+        value: "1000"
+      - name: TZ
+        value: "Europe/London"
+      - name: UMASK_SET
+        value: "022"
+      - name: WEBUI_PORT
+        value: "8080"
+      volumeMounts:
+      - mountPath: "/downloads"
+        name: downloads-path-qbt
+      - mountPath: "/config"
+        name: downloads-path-qbt
+      ports:
+        - name: torrent-ui
+          containerPort: 8080
+          protocol: TCP
+        - name: torrent-dl
+          containerPort: 6881
+          protocol: TCP
+        - name: torrent-dl-udp
+          containerPort: 6881
+          protocol: UDP
+      imagePullPolicy: IfNotPresent
+  volumes:
+    - name: downloads-path-qbt
+      persistentVolumeClaim:
+        claimName: pv-torrent-hq
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: torrent-app-hq
+spec:
+  type: NodePort
+  selector:
+    app: torrent-app-hq
+  ports:
+  - name: torrent-ui
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: torrent-dl
+    port: 6881
+    targetPort: 6881
+    protocol: TCP
+  - name: torrent-dl-udp
+    port: 6881
+    targetPort: 6881
+    protocol: UDP
+  - name: app-ui
+    port: 8086
+    targetPort: 8086
+    protocol: TCP

@@ -1,0 +1,9 @@
+apiVersion: couchbase.com/v2
+kind: CouchbaseReplication
+metadata:
+  name: replicate-to-headquarter 
+  labels:
+    replication: replicate-to-headquarter 
+spec:
+  bucket: overseas-bucket
+  remoteBucket: hq-bucket
